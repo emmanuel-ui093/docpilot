@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Docpilot — Stop Writing Docs. Start Shipping.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080810;
+      --bg2: #0e0e1a;
+      --purple: #7c3aed;
+      --purple-light: #a855f7;
+      --purple-glow: #9333ea;
+      --accent: #c084fc;
+      --text: #f0eaff;
+      --muted: #8b7aa8;
+      --border: rgba(124, 58, 237, 0.25);
+      --card: rgba(124, 58, 237, 0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      width: 12px; height: 12px;
+      background: var(--purple-light);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9998;
+      transition: all 0.25s ease;
+      opacity: 0.5;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* Grid background */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,8,16,0.8);
+      backdrop-filter: blur(20px);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--text);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.8rem; letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      background: var(--purple);
+      color: #fff; border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      cursor: none;
+      transition: background 0.2s, transform 0.1s;
+      text-decoration: none;
+    }
+    .nav-cta:hover { background: var(--purple-light); transform: translateY(-1px); }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      z-index: 1;
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(124,58,237,0.3), transparent 70%);
+      top: 10%; left: 50%; transform: translateX(-50%);
+      animation: orb-float 8s ease-in-out infinite;
+    }
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(168,85,247,0.2), transparent 70%);
+      bottom: 20%; right: 10%;
+      animation: orb-float 10s ease-in-out infinite reverse;
+    }
+
+    @keyframes orb-float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-30px); }
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.72rem;
+      color: var(--accent);
+      margin-bottom: 32px;
+      letter-spacing: 0.08em;
+      animation: fade-up 0.6s ease both;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      animation: fade-up 0.6s 0.1s ease both;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--purple-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(0.9rem, 2vw, 1.05rem);
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.8;
+      margin-bottom: 48px;
+      animation: fade-up 0.6s 0.2s ease both;
+    }
+
+    .hero-form {
+      display: flex; gap: 12px;
+      flex-wrap: wrap; justify-content: center;
+      animation: fade-up 0.6s 0.3s ease both;
+    }
+
+    .hero-input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .hero-input::placeholder { color: var(--muted); }
+    .hero-input:focus { border-color: var(--purple-light); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      color: #fff; border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: none;
+      transition: opacity 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1));
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    .hero-note {
+      margin-top: 16px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      animation: fade-up 0.6s 0.4s ease both;
+    }
+
+    /* DEMO PREVIEW */
+    .demo-section {
+      position: relative; z-index: 1;
+      padding: 0 24px 100px;
+      display: flex; justify-content: center;
+    }
+
+    .demo-window {
+      width: 100%; max-width: 860px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(124,58,237,0.2), 0 40px 80px rgba(0,0,0,0.5);
+      animation: fade-up 0.8s 0.5s ease both;
+    }
+
+    .demo-titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(124,58,237,0.05);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f56; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #27c93f; }
+
+    .demo-title {
+      margin-left: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .demo-body {
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+
+    .demo-pane {
+      padding: 24px;
+    }
+
+    .demo-pane:first-child {
+      border-right: 1px solid var(--border);
+    }
+
+    .demo-pane-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .code-block {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 0.72rem;
+      line-height: 1.8;
+      color: #a78bfa;
+      overflow-x: auto;
+    }
+
+    .code-block .kw { color: #c084fc; }
+    .code-block .str { color: #86efac; }
+    .code-block .fn { color: #67e8f9; }
+    .code-block .cm { color: #4b5563; }
+
+    .doc-output {
+      font-size: 0.75rem;
+      line-height: 1.9;
+    }
+
+    .doc-h { color: var(--accent); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; }
+    .doc-tag {
+      display: inline-block;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.65rem;
+      color: var(--accent);
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .doc-line { color: var(--muted); margin-bottom: 6px; }
+    .doc-line strong { color: var(--text); }
+
+    /* HOW IT WORKS */
+    .section {
+      position: relative; z-index: 1;
+      padding: 100px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      color: var(--purple-light);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 60px;
+    }
+
+    .section-title span {
+      background: linear-gradient(135deg, var(--purple-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+    }
+
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .step:hover {
+      border-color: var(--purple-light);
+      transform: translateY(-4px);
+    }
+
+    .step::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--purple-light));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .step:hover::before { opacity: 1; }
+
+    .step-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 3rem;
+      color: rgba(124,58,237,0.2);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .step-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+
+    .step h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* FEATURES */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(124,58,237,0.5);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: 18px;
+    }
+
+    .feature-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      position: relative;
+      transition: transform 0.3s;
+    }
+
+    .pricing-card:hover { transform: translateY(-5px); }
+
+    .pricing-card.featured {
+      border-color: var(--purple);
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.05));
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      color: #fff;
+      font-size: 0.68rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .plan-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .plan-price {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 3rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .plan-price sup { font-size: 1.2rem; vertical-align: super; }
+    .plan-price span { font-size: 1rem; color: var(--muted); font-weight: 400; }
+
+    .plan-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .plan-features { list-style: none; margin-bottom: 32px; }
+    .plan-features li {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(124,58,237,0.1);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .plan-features li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .btn-plan {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: none;
+      transition: all 0.2s;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+
+    .btn-plan:hover { border-color: var(--purple-light); color: var(--accent); }
+
+    .btn-plan.featured-btn {
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      border: none;
+      color: #fff;
+    }
+    .btn-plan.featured-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* CTA SECTION */
+    .cta-section {
+      position: relative; z-index: 1;
+      padding: 100px 24px;
+      text-align: center;
+    }
+
+    .cta-box {
+      max-width: 700px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.05));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at center, rgba(124,58,237,0.1), transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .cta-box p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.8;
+      margin-bottom: 36px;
+    }
+
+    .cta-form {
+      display: flex; gap: 12px;
+      justify-content: center; flex-wrap: wrap;
+    }
+
+    /* FOOTER */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* ANIMATIONS */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* SUCCESS STATE */
+    .success-msg {
+      display: none;
+      color: #86efac;
+      font-size: 0.8rem;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .demo-body { grid-template-columns: 1fr; }
+      .demo-pane:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      footer { flex-direction: column; text-align: center; }
+      .cta-box { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">✈</div>
+      Docpilot
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <a href="#waitlist" class="nav-cta">Join Waitlist</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="hero-badge">
+      <div class="badge-dot"></div>
+      NOW IN EARLY ACCESS — JOIN THE WAITLIST
+    </div>
+
+    <h1>Stop writing docs.<br/><span>Start shipping.</span></h1>
+
+    <p class="hero-sub">
+      Docpilot turns your API code into clean, structured documentation automatically.
+      No more manual writing. No more outdated docs. Just paste and go.
+    </p>
+
+    <div class="hero-form" id="waitlist">
+      <input class="hero-input" type="email" placeholder="your@email.com" id="heroEmail"/>
+      <button class="btn-primary" onclick="handleSignup('heroEmail', 'heroSuccess')">Get Early Access →</button>
+    </div>
+    <p class="hero-note">Free to join · No credit card required · Be first to launch</p>
+    <p class="success-msg" id="heroSuccess">🎉 You're on the list! We'll be in touch soon.</p>
+  </section>
+
+  <!-- DEMO WINDOW -->
+  <div class="demo-section">
+    <div class="demo-window reveal">
+      <div class="demo-titlebar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="demo-title">docpilot — API Documentation Generator</span>
+      </div>
+      <div class="demo-body">
+        <div class="demo-pane">
+          <div class="demo-pane-label">// Your Code Input</div>
+          <div class="code-block">
+<span class="cm">// Paste your API code here</span>
+<span class="kw">app</span>.<span class="fn">post</span>(<span class="str">'/api/users'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { name, email } = req.body;
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">createUser</span>({ name, email });
+  res.<span class="fn">status</span>(201).<span class="fn">json</span>({ user });
+});
+
+<span class="kw">app</span>.<span class="fn">get</span>(<span class="str">'/api/users/:id'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">findUser</span>(req.params.id);
+  <span class="kw">if</span> (!user) <span class="kw">return</span> res.<span class="fn">status</span>(404).<span class="fn">json</span>({});
+  res.<span class="fn">json</span>({ user });
+});
+          </div>
+        </div>
+        <div class="demo-pane">
+          <div class="demo-pane-label">✦ Generated Documentation</div>
+          <div class="doc-output">
+            <div class="doc-h">POST /api/users</div>
+            <div>
+              <span class="doc-tag">POST</span>
+              <span class="doc-tag">201 Created</span>
+              <span class="doc-tag">Auth: None</span>
+            </div>
+            <div class="doc-line" style="margin-top:10px"><strong>Description:</strong> Creates a new user account.</div>
+            <div class="doc-line"><strong>Body:</strong> name (string), email (string)</div>
+            <div class="doc-line"><strong>Returns:</strong> user object</div>
+            <br/>
+            <div class="doc-h">GET /api/users/:id</div>
+            <div>
+              <span class="doc-tag">GET</span>
+              <span class="doc-tag">200 OK</span>
+              <span class="doc-tag">404 Not Found</span>
+            </div>
+            <div class="doc-line" style="margin-top:10px"><strong>Description:</strong> Retrieves a user by ID.</div>
+            <div class="doc-line"><strong>Params:</strong> id (string, required)</div>
+            <div class="doc-line"><strong>Returns:</strong> user object or 404</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how">
+    <div class="section-label reveal">// How it works</div>
+    <h2 class="section-title reveal">Three steps to <span>perfect docs</span></h2>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-icon">📋</div>
+        <h3>Paste Your Code</h3>
+        <p>Drop in your API routes, functions, or entire project files. Docpilot reads any language or framework.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-icon">⚡</div>
+        <h3>AI Generates Docs</h3>
+        <p>Our AI instantly analyzes your code and generates clean, structured API docs or a professional README in seconds.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-icon">🚀</div>
+        <h3>Export & Ship</h3>
+        <p>Download as Markdown, PDF, or share a hosted link directly with your team or clients. Done.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="section-label reveal">// Features</div>
+    <h2 class="section-title reveal">Everything you need to <span>document faster</span></h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">📄</div>
+        <h3>API Doc Generator</h3>
+        <p>Auto-generates endpoints, parameters, request bodies, and response schemas from your raw code.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📝</div>
+        <h3>README Generator</h3>
+        <p>Creates professional, structured README files for any project — installation, usage, examples included.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">⬇️</div>
+        <h3>Multiple Export Formats</h3>
+        <p>Export to Markdown, PDF, or a shareable hosted page. Works perfectly with GitHub, Notion, and Confluence.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔄</div>
+        <h3>Always Up To Date</h3>
+        <p>Re-paste updated code and regenerate docs in seconds. Never have stale documentation again.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🌐</div>
+        <h3>Any Language</h3>
+        <p>Works with JavaScript, Python, Go, Rust, PHP, Ruby and more. If it's code, Docpilot can document it.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">👥</div>
+        <h3>Team Collaboration</h3>
+        <p>Share docs with your team, leave comments, and keep everyone aligned — coming in Pro plan.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing" style="text-align:center;">
+    <div class="section-label reveal">// Pricing</div>
+    <h2 class="section-title reveal">Simple, <span>honest pricing</span></h2>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal">
+        <div class="plan-name">Free</div>
+        <div class="plan-price"><sup>$</sup>0<span>/mo</span></div>
+        <div class="plan-desc">Perfect for solo devs trying it out.</div>
+        <ul class="plan-features">
+          <li>5 doc generations/month</li>
+          <li>API Doc Generator</li>
+          <li>README Generator</li>
+          <li>Markdown export</li>
+          <li>Community support</li>
+        </ul>
+        <button class="btn-plan" onclick="scrollToWaitlist()">Get Started Free</button>
+      </div>
+      <div class="pricing-card featured reveal">
+        <div class="featured-badge">MOST POPULAR</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price"><sup>$</sup>19<span>/mo</span></div>
+        <div class="plan-desc">For developers who ship fast and document faster.</div>
+        <ul class="plan-features">
+          <li>Unlimited generations</li>
+          <li>API Doc + README Generator</li>
+          <li>PDF + Markdown + Hosted page</li>
+          <li>Version history</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn-plan featured-btn" onclick="scrollToWaitlist()">Join Waitlist →</button>
+      </div>
+      <div class="pricing-card reveal">
+        <div class="plan-name">Team</div>
+        <div class="plan-price"><sup>$</sup>49<span>/mo</span></div>
+        <div class="plan-desc">For agencies and engineering teams.</div>
+        <ul class="plan-features">
+          <li>Everything in Pro</li>
+          <li>Up to 10 team members</li>
+          <li>Team collaboration</li>
+          <li>Custom branding</li>
+          <li>Dedicated support</li>
+        </ul>
+        <button class="btn-plan" onclick="scrollToWaitlist()">Join Waitlist →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-box reveal">
+      <h2>Ready to stop writing docs manually?</h2>
+      <p>Join hundreds of developers on the waitlist. Be first to access Docpilot when we launch.</p>
+      <div class="cta-form">
+        <input class="hero-input" type="email" placeholder="your@email.com" id="ctaEmail"/>
+        <button class="btn-primary" onclick="handleSignup('ctaEmail', 'ctaSuccess')">Get Early Access →</button>
+      </div>
+      <p class="success-msg" id="ctaSuccess">🎉 You're on the list! We'll be in touch soon.</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">✈ Docpilot</div>
+    <div class="footer-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="mailto:hello@docpilot.io">Contact</a>
+    </div>
+    <div class="footer-copy">© 2025 Docpilot. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx - 6 + 'px';
+      cursor.style.top = my - 6 + 'px';
+    });
+
+    function animateRing() {
+      rx += (mx - rx - 18) * 0.12;
+      ry += (my - ry - 18) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top = ry + 'px';
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    document.querySelectorAll('button, a, input').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'scale(2)';
+        ring.style.transform = 'scale(1.5)';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'scale(1)';
+        ring.style.transform = 'scale(1)';
+      });
+    });
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(r => observer.observe(r));
+
+    // Waitlist signup
+    function handleSignup(inputId, successId) {
+      const email = document.getElementById(inputId).value;
+      if (!email || !email.includes('@')) {
+        document.getElementById(inputId).style.borderColor = '#f87171';
+        setTimeout(() => document.getElementById(inputId).style.borderColor = '', 1500);
+        return;
+      }
+      document.getElementById(inputId).value = '';
+      const msg = document.getElementById(successId);
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 5000);
+    }
+
+    function scrollToWaitlist() {
+      document.getElementById('waitlist').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
